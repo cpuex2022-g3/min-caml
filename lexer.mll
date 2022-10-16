@@ -1,11 +1,12 @@
 {
-(* lexer¤¬ÍøÍÑ¤¹¤ëÊÑ¿ô¡¢´Ø¿ô¡¢·¿¤Ê¤É¤ÎÄêµÁ *)
+(* lexerãŒåˆ©ç”¨ã™ã‚‹å¤‰æ•°ã€é–¢æ•°ã€å‹ãªã©ã®å®šç¾© *)
 open Parser
 open Type
 }
 
-(* Àµµ¬É½¸½¤ÎÎ¬µ­ *)
-let space = [' ' '\t' '\n' '\r']
+(* æ­£è¦è¡¨ç¾ã®ç•¥è¨˜ *)
+let space = [' ' '\t']
+let newline = '\r' | '\n' | "\r\n"
 let digit = ['0'-'9']
 let lower = ['a'-'z']
 let upper = ['A'-'Z']
@@ -13,8 +14,10 @@ let upper = ['A'-'Z']
 rule token = parse
 | space+
     { token lexbuf }
+| newline
+   { Lexing.new_line lexbuf; token lexbuf }
 | "(*"
-    { comment lexbuf; (* ¥Í¥¹¥È¤·¤¿¥³¥á¥ó¥È¤Î¤¿¤á¤Î¥È¥ê¥Ã¥¯ *)
+    { comment lexbuf; (* ãƒã‚¹ãƒˆã—ãŸã‚³ãƒ¡ãƒ³ãƒˆã®ãŸã‚ã®ãƒˆãƒªãƒƒã‚¯ *)
       token lexbuf }
 | '('
     { LPAREN }
@@ -26,13 +29,13 @@ rule token = parse
     { BOOL(false) }
 | "not"
     { NOT }
-| digit+ (* À°¿ô¤ò»ú¶ç²òÀÏ¤¹¤ë¥ë¡¼¥ë (caml2html: lexer_int) *)
+| digit+ (* æ•´æ•°ã‚’å­—å¥è§£æã™ã‚‹ãƒ«ãƒ¼ãƒ« (caml2html: lexer_int) *)
     { INT(int_of_string (Lexing.lexeme lexbuf)) }
 | digit+ ('.' digit*)? (['e' 'E'] ['+' '-']? digit+)?
     { FLOAT(float_of_string (Lexing.lexeme lexbuf)) }
-| '-' (* -.¤è¤ê¸å²ó¤·¤Ë¤·¤Ê¤¯¤Æ¤âÎÉ¤¤? ºÇÄ¹°ìÃ×? *)
+| '-' (* -.ã‚ˆã‚Šå¾Œå›ã—ã«ã—ãªãã¦ã‚‚è‰¯ã„? æœ€é•·ä¸€è‡´? *)
     { MINUS }
-| '+' (* +.¤è¤ê¸å²ó¤·¤Ë¤·¤Ê¤¯¤Æ¤âÎÉ¤¤? ºÇÄ¹°ìÃ×? *)
+| '+' (* +.ã‚ˆã‚Šå¾Œå›ã—ã«ã—ãªãã¦ã‚‚è‰¯ã„? æœ€é•·ä¸€è‡´? *)
     { PLUS }
 | "-."
     { MINUS_DOT }
@@ -80,11 +83,12 @@ rule token = parse
     { SEMICOLON }
 | eof
     { EOF }
-| lower (digit|lower|upper|'_')* (* Â¾¤Î¡ÖÍ½Ìó¸ì¡×¤è¤ê¸å¤Ç¤Ê¤¤¤È¤¤¤±¤Ê¤¤ *)
+| lower (digit|lower|upper|'_')* (* ä»–ã®ã€Œäºˆç´„èªã€ã‚ˆã‚Šå¾Œã§ãªã„ã¨ã„ã‘ãªã„ *)
     { IDENT(Lexing.lexeme lexbuf) }
 | _
     { failwith
-        (Printf.sprintf "unknown token %s near characters %d-%d"
+        (Printf.sprintf "line %d: unknown token %s near characters %d-%d"
+            (Lexing.lexeme_start_p lexbuf).pos_lnum (* è¡Œç•ªå·ã‚’å‡ºåŠ› *)
            (Lexing.lexeme lexbuf)
            (Lexing.lexeme_start lexbuf)
            (Lexing.lexeme_end lexbuf)) }

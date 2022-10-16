@@ -1281,7 +1281,7 @@ rawuninstall:
 clean::
 	rm -f $(TARGETS) $(TRASH)
 	rm -rf $(BCDIDIR) $(NCDIDIR) $(MLDEPDIR)
-
+	rm -f *.parsed *.normalized test/*.parsed test/*.normalized
 .PHONY:	cleanup
 cleanup::
 	rm -f $(NONEXECS) $(TRASH)

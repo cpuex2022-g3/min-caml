@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+ln -sf riscv/{*.ml{,i},libmincaml.S} .
+cd min-rt; ln -sf riscv/globals.s .; cd ..

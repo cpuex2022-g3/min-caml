@@ -1,38 +1,39 @@
 open KNormal
 
-let find x env = try M.find x env with Not_found -> x (* ÃÖ´¹¤Î¤¿¤á¤Î´Ø¿ô (caml2html: beta_find) *)
+let find x env = try M.find x env with Not_found -> x (* ï¿½Ö´ï¿½ï¿½Î¤ï¿½ï¿½ï¿½Î´Ø¿ï¿½ (caml2html: beta_find) *)
 
-let rec g env = function (* ¦Â´ÊÌó¥ë¡¼¥Á¥óËÜÂÎ (caml2html: beta_g) *)
-  | Unit -> Unit
-  | Int(i) -> Int(i)
-  | Float(d) -> Float(d)
-  | Neg(x) -> Neg(find x env)
-  | Add(x, y) -> Add(find x env, find y env)
-  | Sub(x, y) -> Sub(find x env, find y env)
-  | FNeg(x) -> FNeg(find x env)
-  | FAdd(x, y) -> FAdd(find x env, find y env)
-  | FSub(x, y) -> FSub(find x env, find y env)
-  | FMul(x, y) -> FMul(find x env, find y env)
-  | FDiv(x, y) -> FDiv(find x env, find y env)
-  | IfEq(x, y, e1, e2) -> IfEq(find x env, find y env, g env e1, g env e2)
-  | IfLE(x, y, e1, e2) -> IfLE(find x env, find y env, g env e1, g env e2)
-  | Let((x, t), e1, e2) -> (* let¤Î¦Â´ÊÌó (caml2html: beta_let) *)
+(* ä¸‹ã‹ã‚‰ä¸ŠãŒã£ã¦ããŸè¡Œç•ªå·ã‚’ä¸Šã¸ *)
+let rec g env = function (* ï¿½Â´ï¿½ï¿½ï¿½ë¡¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (caml2html: beta_g) *)
+  | Unit(ln) -> Unit(ln)
+  | Int(i, ln) -> Int(i, ln)
+  | Float(d, ln) -> Float(d, ln)
+  | Neg(x, ln) -> Neg(find x env, ln)
+  | Add(x, y, ln) -> Add(find x env, find y env, ln)
+  | Sub(x, y, ln) -> Sub(find x env, find y env, ln)
+  | FNeg(x, ln) -> FNeg(find x env, ln)
+  | FAdd(x, y, ln) -> FAdd(find x env, find y env, ln)
+  | FSub(x, y, ln) -> FSub(find x env, find y env, ln)
+  | FMul(x, y, ln) -> FMul(find x env, find y env, ln)
+  | FDiv(x, y, ln) -> FDiv(find x env, find y env, ln)
+  | IfEq(x, y, e1, e2, ln) -> IfEq(find x env, find y env, g env e1, g env e2, ln)
+  | IfLE(x, y, e1, e2, ln) -> IfLE(find x env, find y env, g env e1, g env e2, ln)
+  | Let((x, t), e1, e2, ln) -> (* letï¿½Î¦Â´ï¿½ï¿½ï¿½ (caml2html: beta_let) *)
       (match g env e1 with
-      | Var(y) ->
+      | Var(y, _) ->
           Format.eprintf "beta-reducing %s = %s@." x y;
           g (M.add x y env) e2
       | e1' ->
           let e2' = g env e2 in
-          Let((x, t), e1', e2'))
-  | LetRec({ name = xt; args = yts; body = e1 }, e2) ->
-      LetRec({ name = xt; args = yts; body = g env e1 }, g env e2)
-  | Var(x) -> Var(find x env) (* ÊÑ¿ô¤òÃÖ´¹ (caml2html: beta_var) *)
-  | Tuple(xs) -> Tuple(List.map (fun x -> find x env) xs)
-  | LetTuple(xts, y, e) -> LetTuple(xts, find y env, g env e)
-  | Get(x, y) -> Get(find x env, find y env)
-  | Put(x, y, z) -> Put(find x env, find y env, find z env)
-  | App(g, xs) -> App(find g env, List.map (fun x -> find x env) xs)
-  | ExtArray(x) -> ExtArray(x)
-  | ExtFunApp(x, ys) -> ExtFunApp(x, List.map (fun y -> find y env) ys)
+          Let((x, t), e1', e2', ln))
+  | LetRec({ name = xt; args = yts; body = e1; ln = i }, e2, ln) ->
+      LetRec({ name = xt; args = yts; body = g env e1; ln = i }, g env e2, ln)
+  | Var(x, ln) -> Var(find x env, ln) (* ï¿½Ñ¿ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ (caml2html: beta_var) *)
+  | Tuple(xs, ln) -> Tuple(List.map (fun x -> find x env) xs, ln)
+  | LetTuple(xts, y, e, ln) -> LetTuple(xts, find y env, g env e, ln)
+  | Get(x, y, ln) -> Get(find x env, find y env, ln)
+  | Put(x, y, z, ln) -> Put(find x env, find y env, find z env, ln)
+  | App(g, xs, ln) -> App(find g env, List.map (fun x -> find x env) xs, ln)
+  | ExtArray(x, ln) -> ExtArray(x, ln)
+  | ExtFunApp(x, ys, ln) -> ExtFunApp(x, List.map (fun y -> find y env) ys, ln)
 
 let f = g M.empty
